@@ -1,3 +1,6 @@
+from math import tan
+
+
 class Geometry:
     def __init__(self, x, y):
         self.center = (x, y)
@@ -10,18 +13,31 @@ class Point(Geometry):
     def __eq__(self, other):
         return self.center == other.center
 
+    def __add__(self, other):
+        return Point(self.center[0] + other.center[0],
+                     self.center[1] + other.center[1])
+
+    def __sub__(self, other):
+        return Point(self.center[0] - other.center[0],
+                     self.center[1] - other.center[1])
+
+    def coord(self, x0=0, y0=0):
+        return self - Point(x0, y0)
+
 
 class Line(Geometry):
     def __init__(self, x_1, y_1, x_2, y_2):
-        self.points = (Point(x_1, y_1), Point(x_2, y_2))
-        self.formula = 0
+        self.points = [Point(x_1, y_1), Point(x_2, y_2)]
         super().__init__(x_1 + (x_1 + x_2) // 2,
                          y_1 + (y_1 + y_2) // 2)
+
+    def __eq__(self, other):
+        pass
 
 
 class Area(Geometry):
     def __init__(self):
-        super().__init__()
+        super().__init__(0, 0)
 
 
 class Object:
