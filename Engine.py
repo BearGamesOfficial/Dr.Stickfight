@@ -32,7 +32,11 @@ class Line(Geometry):
                          y_1 + (y_1 + y_2) // 2)
 
     def __eq__(self, other):
-        pass
+        if other.__class__ is Point:
+            # Здесь нужно вывести формулу линейной функции по двум
+            # точкам, а затем подставить и проверить является ли
+            # точка частью этой прямой
+            pass
 
 
 class Area(Geometry):
@@ -68,3 +72,8 @@ class Location(Object):
 class DestroyableLocation(Location):
     def __init__(self):
         super().__init__()
+
+
+a = Point(0, 2)
+b = Line(12, 22, 323, 1)
+print(b == a)
