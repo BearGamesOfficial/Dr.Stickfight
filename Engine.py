@@ -108,13 +108,19 @@ class Segment(Geometry):
     # A segment is a part of a straight line passing through 2 given points and bounded by them.
 
 
-class Line(Segment):
+class Line(Geometry):
     def __init__(self, *segments):
-        pass
-        super().__init__(0, 0, None, None)
+        self.segments = segments
+        self.x = []
+        self.y = [i.center[1] for j in self.segments for i in j.points if self.x.append(i.center[0]) is None]
+        self.intersections = {}
+        self.length = sum([sqrt((x.points[1].center[0] - x.points[0].center[0]) ** 2 + (
+                x.points[1].center[1] - x.points[0].center[1]) ** 2) for x in self.segments])
+        super().__init__(max(self.x) - min(self.x), max(self.y) - min(self.y))
 
     def __str__(self):
-        return f"Line from {str(self.points[0])} to {str(self.points[-1])} with {len(self.points)} points"
+        return f"Line from {str(self.segments[0].points[0])} to {str(self.segments[-1].points[1])} with \
+{len(self.segments)} segments"
     # Line is A line is a set of segments. The segments can be on the plane at any angles and the center of this line
     # is not necessarily on the line connecting its ends.
 
@@ -154,10 +160,6 @@ class DestroyableLocation(Location):
         super().__init__()
 
 
-point = Point(0, 2)
 segment = Segment(0, 0, 10, 20)
 segm2 = Segment(1, 0, 4, 12)
-print(segment == point)
-print(segment == segm2)
-print(segment.intersections)
-print(segment.intersections[[x for x in segment.intersections][0]])
+line = Line(segment, segm2)
