@@ -1,10 +1,13 @@
+from math import sqrt
+
+
 class Geometry:
     def __init__(self, x, y):
         self.center = (x, y)
+        self.id = id(self)
 
     def __str__(self):
-        return f"Point with the center in ({self.center[0]}, \
-{self.center[1]})"
+        return f"Point with the center in ({self.center[0]}, {self.center[1]})"
     # Geometric shapes are the basis of the engine
 
 
@@ -16,12 +19,10 @@ class Point(Geometry):
         return self.center == other.center
 
     def __add__(self, other):
-        return Point(self.center[0] + other.center[0],
-                     self.center[1] + other.center[1])
+        return Point(self.center[0] + other.center[0], self.center[1] + other.center[1])
 
     def __sub__(self, other):
-        return Point(self.center[0] - other.center[0],
-                     self.center[1] - other.center[1])
+        return Point(self.center[0] - other.center[0], self.center[1] - other.center[1])
 
     def __ne__(self, other):
         return not (self == other)
@@ -46,43 +47,76 @@ class Point(Geometry):
 class Segment(Geometry):
     def __init__(self, x_1, y_1, x_2, y_2):
         self.points = [Point(x_1, y_1), Point(x_2, y_2)]
-        super().__init__(x_1 + (x_1 + x_2) // 2,
-                         y_1 + (y_1 + y_2) // 2)
+        self.x = []
+        self.y = [i.center[1] for i in self.points if self.x.append(i.center[0]) is None]
+        self.intersections = {}
+        self.length = sqrt((x_2 - x_1) ** 2 + (y_2 - y_1) ** 2)
+        super().__init__(x_1 + (x_1 + x_2) // 2, y_1 + (y_1 + y_2) // 2)
+
+    def formula(self, x):
+        return (self.points[0].center[1] - self.points[1].center[1]) / \
+               (self.points[0].center[0] - self.points[1].center[0]) * x + self.points[1].center[1] - \
+               (self.points[0].center[1] - self.points[1].center[1]) / \
+               (self.points[0].center[0] - self.points[1].center[0]) * self.points[1].center[0]
+        # This construction computes Y of the function for a given X
 
     def __eq__(self, other):
         if other.__class__ is Point:
-            # Если x точки м/у минимальным x и максимальным =>
-            # проверять соответствие формуле, где x = point.center[0];
-            # y = point.center[1]. х используется в формуле,
-            # сравнивать нужно по y.
-            x = 1
-            formula = (self.points[0].center[1] -
-                       self.points[1].center[1]) / \
-                      (self.points[0].center[0] -
-                       self.points[1].center[0]) * x + \
-                      self.points[1].center[1] - \
-                      (self.points[0].center[1] -
-                       self.points[1].center[1]) / \
-                      (self.points[0].center[0] -
-                       self.points[1].center[0]) * \
-                      self.points[1].center[0]
-            # This construction computes Y of the function for a
-            # given X
-            print(formula)
+            # Determining the coordinates of a point
+            x_p, y_p = other.center
+            # Checking whether the point falls into the dimensions of the segment
+            if (min(self.x) <= x_p <= max(self.x)) and (min(self.y) <= y_p <= max(self.y)):
+                return self.formula(x_p) == y_p
+            else:
+                return False
+        elif other.__class__ is Segment:
+            result, x_range = False, (0, 0)
+            # Finding intersections of the segments in X-axis
+            if not (max(self.x) < min(other.x) or min(self.x) > max(other.x)):
+                if min(self.x) < min(other.x):
+                    x_range = (min(other.x), max(self.x))
+                else:
+                    x_range = (min(self.x), max(other.x))
+            # Running through the intersection of the segments and look for a common point
+            for x in range(x_range[0], x_range[1]):
+                if self.formula(x) == other.formula(x):
+                    result = True
+                    self.intersections[other.id] = Point(x, self.formula(x))
+                    break
+            return result
+
+    def __add__(self, other):
+        return Line(self, other)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __lt__(self, other):
+        return self.length < other.length
+
+    def __le__(self, other):
+        return self.length <= other.length
+
+    def __gt__(self, other):
+        return not (self < other)
+
+    def __ge__(self, other):
+        return not (self <= other)
 
     def __str__(self):
+        return f"Line from {str(self.points[0])} to {str(self.points[-1])} with {len(self.points)} points"
+    # A segment is a part of a straight line passing through 2 given points and bounded by them.
 
-    # A segment is a part of a straight line passing through 2 given
-    # points and bounded by them.
 
-
-class Line(Geometry):
+class Line(Segment):
     def __init__(self, *segments):
         pass
-        super().__init__(None, None)
-    # Line is A line is a set of segments. The segments can be on the
-    # plane at any angles and the center of this line is not
-    # necessarily on the line connecting its ends.
+        super().__init__(0, 0, None, None)
+
+    def __str__(self):
+        return f"Line from {str(self.points[0])} to {str(self.points[-1])} with {len(self.points)} points"
+    # Line is A line is a set of segments. The segments can be on the plane at any angles and the center of this line
+    # is not necessarily on the line connecting its ends.
 
 
 class Area(Geometry):
@@ -121,5 +155,9 @@ class DestroyableLocation(Location):
 
 
 point = Point(0, 2)
-line = Segment(0, 0, 10, 20)
-print(line == point)
+segment = Segment(0, 0, 10, 20)
+segm2 = Segment(1, 0, 4, 12)
+print(segment == point)
+print(segment == segm2)
+print(segment.intersections)
+print(segment.intersections[[x for x in segment.intersections][0]])
