@@ -6,41 +6,30 @@ class Geometry:
         self.center = (x, y)
         self.id = id(self)
 
-    def __str__(self):
-        return f"Point with the center in ({self.center[0]}, {self.center[1]})"
+    def __str__(self): return f"Point with the center in ({self.center[0]}, {self.center[1]})"
     # Geometric shapes are the basis of the engine
 
 
 class Point(Geometry):
-    def __init__(self, x, y):
-        super().__init__(x, y)
+    def __init__(self, x, y): super().__init__(x, y)
 
-    def __eq__(self, other):
-        return self.center == other.center
+    def __add__(self, other): return Point(self.center[0] + other.center[0], self.center[1] + other.center[1])
 
-    def __add__(self, other):
-        return Point(self.center[0] + other.center[0], self.center[1] + other.center[1])
+    def __sub__(self, other): return Point(self.center[0] - other.center[0], self.center[1] - other.center[1])
 
-    def __sub__(self, other):
-        return Point(self.center[0] - other.center[0], self.center[1] - other.center[1])
+    def __eq__(self, other): return self.center == other.center
 
-    def __ne__(self, other):
-        return not (self == other)
+    def __lt__(self, other): return self.center[1] < other.center[1]
 
-    def __lt__(self, other):
-        return self.center[1] < other.center[1]
+    def __le__(self, other): return self.center[0] < self.center[0]
 
-    def __le__(self, other):
-        return self.center[0] < self.center[0]
+    def __ne__(self, other): return not (self == other)
 
-    def __gt__(self, other):
-        return not (self < other)
+    def __gt__(self, other): return not (self < other)
 
-    def __ge__(self, other):
-        return not (self <= other)
+    def __ge__(self, other): return not (self <= other)
 
-    def coord(self, x0=0, y0=0):
-        return self - Point(x0, y0)
+    def coord(self, x0=0, y0=0): return self - Point(x0, y0)
     # Point is basic element of geometry. It has only center.
 
 
@@ -118,8 +107,7 @@ class Line(Geometry):
                 x.points[1].center[1] - x.points[0].center[1]) ** 2) for x in self.segments])
         super().__init__(max(self.x) - min(self.x), max(self.y) - min(self.y))
 
-    def __str__(self):
-        return f"Line from {str(self.segments[0].points[0])} to {str(self.segments[-1].points[1])} with \
+    def __str__(self): return f"Line from {str(self.segments[0].points[0])} to {str(self.segments[-1].points[1])} with \
 {len(self.segments)} segments"
     # Line is A line is a set of segments. The segments can be on the plane at any angles and the center of this line
     # is not necessarily on the line connecting its ends.
