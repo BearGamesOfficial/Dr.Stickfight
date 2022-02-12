@@ -1,12 +1,17 @@
 from math import sqrt
 
+# If text of commit didn't saved - Last change is
+# "Ended class Line; comapres for Areas"
+
+# Next declared geometry properties
+
 
 class Geometry:
     def __init__(self, x, y):
         self.center = (x, y)
         self.id = id(self)
 
-    def __str__(self): return f"Point with the center in ({self.center[0]}, {self.center[1]})"
+    #def __str__(self): return f"Point with the center in ({self.center[0]}, {self.center[1]})"
     # Geometric shapes are the basis of the engine
 
 
@@ -73,6 +78,8 @@ class Segment(Geometry):
                     self.intersections[other.id] = Point(x, self.formula(x))
                     break
             return result
+        else:
+            raise TypeError("Geometry didn't detected")
 
     def __add__(self, other):
         return Line(self, other)
@@ -99,7 +106,7 @@ class Segment(Geometry):
 
 class Line(Geometry):
     def __init__(self, *segments):
-        self.segments = segments
+        self.segments = list(segments)
         self.x = []
         self.y = [i.center[1] for j in self.segments for i in j.points if self.x.append(i.center[0]) is None]
         self.intersections = {}
@@ -107,16 +114,161 @@ class Line(Geometry):
                 x.points[1].center[1] - x.points[0].center[1]) ** 2) for x in self.segments])
         super().__init__(max(self.x) - min(self.x), max(self.y) - min(self.y))
 
+    def __eq__(self, other):
+        if other.__class__ is Point or other.__class__ is Segment:
+            res = False
+            # Go through segments list and checking with old method
+            for i in self.segments:
+                if i == other:
+                    res = True
+                    break
+            return res
+        elif other.__class__ is Line:
+            res = False
+            # Line is set of segments but __eq__ for Line and other Segments have been already described
+            for i in other.segmets:
+                if self == i:
+                    res = True
+            return res
+        else:
+            raise TypeError("Geometry didn't detected")
+
+    def __add__(self, other):
+        if other.__class__ is Segment:
+            if other not in self.segments:
+                self.segments.append(other)
+        elif other.__class__ is Line:
+            a = [0 for i in other.segments if i not in self.segments if self.segments.append(other) is None]
+        else:
+            raise TypeError(f"Line is set only of Segments, not {other.__class__}")
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __lt__(self, other):
+        return self.length < other.length
+
+    def __le__(self, other):
+        return self.length <= other.length
+
+    def __gt__(self, other):
+        return not (self < other)
+
+    def __ge__(self, other):
+        return not (self <= other)
+
     def __str__(self): return f"Line from {str(self.segments[0].points[0])} to {str(self.segments[-1].points[1])} with \
 {len(self.segments)} segments"
+
+    def join(self):
+        self.intersections = {}
+        for ind, segm in enumerate(self.segments):
+            for i in segm.intersections:
+                self.intersections[(ind, i)] = segm.intersections[i]
+        # Now self.intersections is looking like:
+        # {
+        #     (<index of segment in line (ind 0)>, <id of object which intersect this line (id A)>):
+        #         <point 1>,
+        #         <point 2>,
+        #     (<ind 0>, <id B>):
+        #         <point 1>,
+        #     (<ind 1>, <id C>):
+        #         <point 1>
+        # }
+
     # Line is A line is a set of segments. The segments can be on the plane at any angles and the center of this line
     # is not necessarily on the line connecting its ends.
 
 
 class Area(Geometry):
-    def __init__(self):
-        super().__init__(0, 0)
+    def __init__(self, border=Line(Segment(0, 0, 0, 0)), area=0):
+        self.x = []
+        self.y = []
+        self.intersections = {}
+        self.inclusions = []
+        self.overlays = {}
+        self.border_length = 0
+        self.border = border
+        self.area = area
+        self.area_locked = False
+        self.length_locked = False
+        super().__init__(border.center[0], border.center[1])
 
+    def __eq__(self, other):
+        if other.__class__ is Area:
+            return self.area == other.area
+        else:
+            raise TypeError(f"Can't compare Area and {other.__class__}")
+        # Slightly different comparison:
+        # a == b compares areas of a and b;
+        # a += b compares center points of a and b;
+        # a -= b compares border length of a and b.
+
+    def __iadd__(self, other):
+        if other.__class__ is Area:
+            return self.center == other.center
+        else:
+            raise TypeError(f"Can't compare Area and {other.__class__}")
+
+    def __isub__(self, other):
+        if other.__class__ is Area:
+            return self.border_length == other.border_length
+        else:
+            raise TypeError(f"Can't compare Area and {other.__class__}")
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __lt__(self, other):
+        return (self.area, self.center, self.border_length) < (other.area, other.center, other.border_length)
+
+    def __le__(self, other):
+        return (self.area, self.center, self.border_length) <= (other.area, other.center, other.border_length)
+
+    def __gt__(self, other):
+        return not ((self.area, self.center, self.border_length) < (other.area, other.center, other.border_length))
+
+    def __ge__(self, other):
+        return not ((self.area, self.center, self.border_length) <= (other.area, other.center, other.border_length))
+
+    def __add__(self, other):
+        if other.__class__ is Area:
+            pass
+        else:
+            raise TypeError(f"Can't add {other.__class__} to Area")
+
+    def __sub__(self, other):
+        if other.__class__ is Area:
+            pass
+        else:
+            raise TypeError(f"Can't sub {other.__class__} from Area")
+
+    # 3 Ways to increase area:
+    # 1) a * n - increases in y-axis;
+    # 2) a *= n - increases in x-axis;
+    # 3) a ** n = increases all axis
+
+    def __mul__(self, other):
+        pass
+
+    def __imul__(self, other):
+        pass
+
+    def __pow__(self, power):
+        return (self * sqrt(power)).__imul__(sqrt(power))
+
+    # 4 Ways to decrease area:
+    # 1) a / n - decreases in y-axis;
+    # 2) a /= n - decreases in x-axis;
+    # 3) a // n = decreases all axis;
+    # 4) a % n = mod of a // n
+
+    def __str__(self):
+        return f"Line from {str(self.points[0])} to {str(self.points[-1])} with {len(self.points)} points"
+    # A segment is a part of a straight line passing through 2 given points and bounded by them.
+
+
+# Next declared properties of physic objects
 
 class Object:
     def __init__(self):
@@ -149,5 +301,12 @@ class DestroyableLocation(Location):
 
 
 segment = Segment(0, 0, 10, 20)
-segm2 = Segment(1, 0, 4, 12)
-line = Line(segment, segm2)
+segm2 = Segment(0, 0, 10, 5)
+segm3 = Segment(0, 0, 10, 10)
+segm4 = Segment(0, 0, 10, 0)
+line = Line(segment, segm2, segm3)
+if line == segm4:
+    print("Ok")
+else:
+    print("blyat")
+line.join()
