@@ -1,7 +1,8 @@
 from math import sqrt
 
-# If text of commit didn't saved - Last change is
-# "Ended class Line; comapres for Areas"
+# Last change is: Added area_counter(), ended changing area methods (not sub and add!)
+# Started space-compares methods.
+# Next you will end space-compares methods.
 
 # Next declared geometry properties
 
@@ -11,7 +12,7 @@ class Geometry:
         self.center = (x, y)
         self.id = id(self)
 
-    #def __str__(self): return f"Point with the center in ({self.center[0]}, {self.center[1]})"
+    def __str__(self): return f"Point with the center in ({self.center[0]}, {self.center[1]})"
     # Geometric shapes are the basis of the engine
 
 
@@ -183,16 +184,31 @@ class Line(Geometry):
 class Area(Geometry):
     def __init__(self, border=Line(Segment(0, 0, 0, 0)), area=0):
         self.x = []
-        self.y = []
+        self.y = [i.center[1] for segm in border.segments for i in segm.points if (self.x.append(i.center[0])) is None]
         self.intersections = {}
         self.inclusions = []
         self.overlays = {}
         self.border_length = 0
         self.border = border
         self.area = area
+        self.center_locked = False
         self.area_locked = False
         self.length_locked = False
         super().__init__(border.center[0], border.center[1])
+
+    # Next 3 methods of compares areas as objects in space
+
+    def is_intersects(self):
+        # intersections with other objects (not areas)
+        pass
+
+    def is_inside(self):
+        # search of objects inside this area
+        pass
+
+    def is_overlaps(self):
+        # search intersections with areas (and and create borders for inner area)
+        pass
 
     def __eq__(self, other):
         if other.__class__ is Area:
@@ -233,7 +249,11 @@ class Area(Geometry):
 
     def __add__(self, other):
         if other.__class__ is Area:
-            pass
+            if self.border == other.border:
+                # Now we should run throw Points in Borders, find intersections and add outer lines to border.
+                pass
+            else:
+                raise ArithmeticError(f"Can't join separated Areas")
         else:
             raise TypeError(f"Can't add {other.__class__} to Area")
 
@@ -244,27 +264,101 @@ class Area(Geometry):
             raise TypeError(f"Can't sub {other.__class__} from Area")
 
     # 3 Ways to increase area:
-    # 1) a * n - increases in y-axis;
-    # 2) a *= n - increases in x-axis;
-    # 3) a ** n = increases all axis
+    # 1) a * number_of_vertices - increases in y-axis;
+    # 2) a *= number_of_vertices - increases in x-axis;
+    # 3) a ** number_of_vertices = increases all axis
 
     def __mul__(self, other):
-        pass
+        if self.center_locked:
+            for i in self.border.segments:
+                for j in i.points:
+                    if j.center[1] <= self.center[1]:
+                        j.center[1] -= other // 2
+                    else:
+                        j.center[1] += other // 2
+        else:
+            for i in self.border.segments:
+                i.points = [Point(j.center[0], j.center[1] + other) for j in i.points if j.center[1] != min(self.y)][:]
+        self.update()
 
     def __imul__(self, other):
-        pass
+        if self.center_locked:
+            for i in self.border.segments:
+                for j in i.points:
+                    if j.center[0] <= self.center[0]:
+                        j.center[0] -= other // 2
+                    else:
+                        j.center[0] += other // 2
+        else:
+            for i in self.border.segments:
+                i.points = [Point(j.center[0] + other, j.center[1]) for j in i.points if j.center[0] != min(self.x)][:]
+        self.update()
+        return self
 
     def __pow__(self, power):
-        return (self * sqrt(power)).__imul__(sqrt(power))
+        self.__imul__(sqrt(power))
+        self * sqrt(power)
+        self.update()
 
-    # 4 Ways to decrease area:
-    # 1) a / n - decreases in y-axis;
-    # 2) a /= n - decreases in x-axis;
-    # 3) a // n = decreases all axis;
-    # 4) a % n = mod of a // n
+    # 3 Ways to decrease area:
+    # 1) a //= number_of_vertices - decreases in y-axis;
+    # 2) a /= number_of_vertices - decreases in x-axis;
+    # 3) a // number_of_vertices = decreases all axis;
+
+    def __ifloordiv__(self, other):
+        if self.center_locked:
+            for i in self.border.segments:
+                for j in i.points:
+                    if j.center[1] <= self.center[1]:
+                        j.center[1] += other // 2
+                    else:
+                        j.center[1] -= other // 2
+        else:
+            for i in self.border.segments:
+                i.points = [Point(j.center[0], j.center[1] - other) for j in i.points if j.center[1] != min(self.y)][:]
+        self.update()
+
+    def __idiv__(self, other):
+        if self.center_locked:
+            for i in self.border.segments:
+                for j in i.points:
+                    if j.center[0] <= self.center[0]:
+                        j.center[0] += other // 2
+                    else:
+                        j.center[0] -= other // 2
+        else:
+            for i in self.border.segments:
+                i.points = [Point(j.center[0] - other, j.center[1]) for j in i.points if j.center[0] != min(self.y)][:]
+        self.update()
+
+    def __floordiv__(self, other):
+        self.__ifloordiv__(sqrt(other))
+        self.__idiv__(sqrt(other))
+        self.update()
 
     def __str__(self):
-        return f"Line from {str(self.points[0])} to {str(self.points[-1])} with {len(self.points)} points"
+        return f"Area from {str(Point(min(self.x), self.y[self.x.index(min(self.x))]))} to \
+{str(Point(max(self.x), self.y[self.x.index(max(self.x))]))} with \
+{len(self.x)} vertices, a border length of {self.border_length} and an area of {self.area}"
+
+    def area_counter(self):
+        self.area = 0
+        # Calculation of the area of a polygon through the sum of the areas of trapezoids
+        for i in range(len(self.x)):
+            if i == 0:
+                # if i == 0, then y[i - 1] replace with y[len(x) - 1]
+                self.area += self.x[i] * (self.y[len(self.x) - 1] - self.y[i + 1])
+            elif i == len(self.x) - 1:
+                # if i == len(x) - 1, then y[i + 1] replace with y[0]
+                self.area += self.x[i] * (self.y[i - 1] - self.y[0])
+            else:
+                self.area += self.x[i] * (self.y[i - 1] - self.y[i + 1])
+        self.area = abs(self.area / 2)
+
+    def update(self):
+        # This function will update all changing parameters which belongs only this object (example: border length)
+        self.area_counter()
+        pass
     # A segment is a part of a straight line passing through 2 given points and bounded by them.
 
 
@@ -300,13 +394,6 @@ class DestroyableLocation(Location):
         super().__init__()
 
 
-segment = Segment(0, 0, 10, 20)
-segm2 = Segment(0, 0, 10, 5)
-segm3 = Segment(0, 0, 10, 10)
-segm4 = Segment(0, 0, 10, 0)
-line = Line(segment, segm2, segm3)
-if line == segm4:
-    print("Ok")
-else:
-    print("blyat")
-line.join()
+area = Area(border=Line(Segment(1, 1, 1, 2), Segment(1, 2, 2, 2), Segment(2, 2, 2, 1), Segment(1, 1, 2, 1)))
+print(area)
+print(area ** 2)
